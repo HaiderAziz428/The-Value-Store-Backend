@@ -86,11 +86,6 @@ module.exports = function (sequelize, DataTypes) {
       through: "productsMore_productsProducts",
     });
 
-    db.products.belongsTo(db.brands, {
-      as: "brand",
-      constraints: false,
-    });
-
     db.products.hasMany(db.file, {
       as: "image",
       foreignKey: "belongsToId",

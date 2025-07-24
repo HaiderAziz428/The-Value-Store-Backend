@@ -36,10 +36,6 @@ module.exports = class ProductsDBApi {
       { transaction }
     );
 
-    await products.setBrand(data.brand || null, {
-      transaction,
-    });
-
     await products.setCategories(data.categories || [], {
       transaction,
     });
@@ -102,10 +98,6 @@ module.exports = class ProductsDBApi {
       },
       { transaction }
     );
-
-    await products.setBrand(data.brand || null, {
-      transaction,
-    });
 
     await products.setCategories(data.categories || [], {
       transaction,
@@ -185,10 +177,6 @@ module.exports = class ProductsDBApi {
       transaction,
     });
 
-    output.brand = await products.getBrand({
-      transaction,
-    });
-
     output.more_products = await products.getMore_products({
       transaction,
     });
@@ -204,11 +192,6 @@ module.exports = class ProductsDBApi {
     const transaction = (options && options.transaction) || undefined;
     let where = {};
     let include = [
-      {
-        model: db.brands,
-        as: "brand",
-      },
-
       {
         model: db.categories,
         as: "categories",
@@ -355,17 +338,6 @@ module.exports = class ProductsDBApi {
         where = {
           ...where,
           status: filter.status,
-        };
-      }
-
-      if (filter.brand) {
-        var listItems = filter.brand.split("|").map((item) => {
-          return { ["brandId"]: Utils.uuid(item) };
-        });
-
-        where = {
-          ...where,
-          [Op.or]: listItems,
         };
       }
 
