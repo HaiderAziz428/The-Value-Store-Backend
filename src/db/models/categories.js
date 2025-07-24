@@ -1,13 +1,12 @@
-
-const config = require('../../config');
+const config = require("../../config");
 const providers = config.providers;
-const crypto = require('crypto');
-const bcrypt = require('bcrypt');
-const moment = require('moment');
+const crypto = require("crypto");
+const bcrypt = require("bcrypt");
+const moment = require("moment");
 
-module.exports = function(sequelize, DataTypes) {
+module.exports = function (sequelize, DataTypes) {
   const categories = sequelize.define(
-    'categories',
+    "categories",
     {
       id: {
         type: DataTypes.UUID,
@@ -16,7 +15,6 @@ module.exports = function(sequelize, DataTypes) {
       },
       title: {
         type: DataTypes.TEXT,
-      
       },
       meta_description: {
         type: DataTypes.TEXT,
@@ -54,23 +52,24 @@ module.exports = function(sequelize, DataTypes) {
     {
       timestamps: true,
       paranoid: true,
-    },
+    }
   );
 
   categories.associate = (db) => {
-
-
-    db.categories.belongsTo(db.users, {
-      as: 'createdBy',
+    db.categories.belongsToMany(db.products, {
+      as: "products",
+      constraints: false,
+      through: "productsCategoriesCategories",
     });
 
     db.categories.belongsTo(db.users, {
-      as: 'updatedBy',
+      as: "createdBy",
+    });
+
+    db.categories.belongsTo(db.users, {
+      as: "updatedBy",
     });
   };
 
-
-
   return categories;
 };
-
