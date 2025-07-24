@@ -38,6 +38,13 @@ fs.readdirSync(__dirname)
     db[model.name] = model;
   });
 
+// Ensure all associations are set up after all models are loaded
+Object.keys(db).forEach((modelName) => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
+
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
