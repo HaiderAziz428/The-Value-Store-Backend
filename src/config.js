@@ -4,39 +4,39 @@ var config = {
   bcrypt: {
     saltRounds: 12,
   },
-  admin_pass: "password",
-  client_pass: "123456",
-  admin_email: "admin@flatlogic.com",
+  // Use environment variables for all secrets
+  admin_pass: process.env.ADMIN_PASS, // ADMIN_PASS
+  client_pass: process.env.CLIENT_PASS, // CLIENT_PASS
+  admin_email: process.env.ADMIN_EMAIL, // ADMIN_EMAIL
   providers: {
     LOCAL: "local",
     GOOGLE: "google",
     MICROSOFT: "microsoft",
   },
-  secret_key: "HUEyqESqgQ1yTwzVlO6wprC9Kf1J1xuA",
-  remote: "https://sing-generator-node.herokuapp.com",
+  secret_key: process.env.SECRET_KEY, // SECRET_KEY
+  remote: process.env.REMOTE_URL || "https://sing-generator-node.herokuapp.com", // REMOTE_URL (optional)
   port: process.env.NODE_ENV === "production" ? "" : "8080",
   hostUI:
     process.env.NODE_ENV === "production"
-      ? "https://flatlogic-ecommerce.herokuapp.com"
+      ? process.env.FRONTEND_URL || "https://flatlogic-ecommerce.herokuapp.com" // FRONTEND_URL (optional)
       : "http://localhost",
   portUI: process.env.NODE_ENV === "production" ? "" : "3000",
   google: {
-    clientId:
-      "671001533244-kf1k1gmp6mnl0r030qmvdu6v36ghmim6.apps.googleusercontent.com",
-    clientSecret: "Yo4qbKZniqvojzUQ60iKlxqR",
+    clientId: process.env.GOOGLE_CLIENT_ID, // GOOGLE_CLIENT_ID
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET, // GOOGLE_CLIENT_SECRET
   },
   microsoft: {
-    clientId: "4696f457-31af-40de-897c-e00d7d4cff73",
-    clientSecret: "m8jzZ.5UpHF3=-dXzyxiZ4e[F8OF54@p",
+    clientId: process.env.MICROSOFT_CLIENT_ID, // MICROSOFT_CLIENT_ID
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET, // MICROSOFT_CLIENT_SECRET
   },
   uploadDir: os.tmpdir(),
   email: {
-    from: "support@flatlogic.com",
-    host: "smtp.gmail.com",
-    port: 587,
+    from: process.env.EMAIL_FROM || "support@flatlogic.com", // EMAIL_FROM (optional)
+    host: process.env.EMAIL_HOST || "smtp.gmail.com", // EMAIL_HOST (optional)
+    port: process.env.EMAIL_PORT || 587, // EMAIL_PORT (optional)
     auth: {
-      user: "support@flatlogic.com",
-      pass: process.env.EMAIL_PASS || "Flatlogic1863",
+      user: process.env.EMAIL_USER || "support@flatlogic.com", // EMAIL_USER (optional)
+      pass: process.env.EMAIL_PASS, // EMAIL_PASS (no fallback)
     },
     tls: {
       rejectUnauthorized: false,
