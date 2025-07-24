@@ -1,8 +1,7 @@
-
-const db = require('../models');
-const FileDBApi = require('./file');
-const crypto = require('crypto');
-const Utils = require('../utils');
+const db = require("../models");
+const FileDBApi = require("./file");
+const crypto = require("crypto");
+const Utils = require("../utils");
 
 const Sequelize = db.Sequelize;
 const Op = Sequelize.Op;
@@ -15,51 +14,29 @@ module.exports = class CategoriesDBApi {
     const categories = await db.categories.create(
       {
         id: data.id || undefined,
-title: data.title 
-        ||
-        null,
-        meta_description: data.meta_description 
-        ||
-        null,
-        keywords: data.keywords 
-        ||
-        null,
-        meta_author: data.meta_author 
-        ||
-        null,
-        meta_og_title: data.meta_og_title 
-        ||
-        null,
-        meta_og_url: data.meta_og_url 
-        ||
-        null,
-        meta_og_image: data.meta_og_image 
-        ||
-        null,
-        meta_fb_id: data.meta_fb_id 
-        ||
-        null,
-        meta_og_sitename: data.meta_og_sitename 
-        ||
-        null,
-        post_twitter: data.post_twitter 
-        ||
-        null,
+        title: data.title || null,
+        meta_description: data.meta_description || null,
+        keywords: data.keywords || null,
+        meta_author: data.meta_author || null,
+        meta_og_title: data.meta_og_title || null,
+        meta_og_url: data.meta_og_url || null,
+        meta_og_image: data.meta_og_image || null,
+        meta_fb_id: data.meta_fb_id || null,
+        meta_og_sitename: data.meta_og_sitename || null,
+        post_twitter: data.post_twitter || null,
         importHash: data.importHash || null,
         createdById: currentUser.id,
         updatedById: currentUser.id,
       },
-      { transaction },
+      { transaction }
     );
-
-
 
     return categories;
   }
 
   static async update(id, data, options) {
     console.log(data);
-    const currentUser = (options && options.currentUser) || {id: null};
+    const currentUser = (options && options.currentUser) || { id: null };
     const transaction = (options && options.transaction) || undefined;
 
     const categories = await db.categories.findByPk(id, {
@@ -68,60 +45,41 @@ title: data.title
 
     await categories.update(
       {
-title: data.title
-        ||
-        null,
-        meta_description: data.meta_description 
-        ||
-        null,
-        keywords: data.keywords 
-        ||
-        null,
-        meta_author: data.meta_author 
-        ||
-        null,
-        meta_og_title: data.meta_og_title 
-        ||
-        null,
-        meta_og_url: data.meta_og_url 
-        ||
-        null,
-        meta_og_image: data.meta_og_image 
-        ||
-        null,
-        meta_fb_id: data.meta_fb_id 
-        ||
-        null,
-        meta_og_sitename: data.meta_og_sitename 
-        ||
-        null,
-        post_twitter: data.post_twitter 
-        ||
-        null,
+        title: data.title || null,
+        meta_description: data.meta_description || null,
+        keywords: data.keywords || null,
+        meta_author: data.meta_author || null,
+        meta_og_title: data.meta_og_title || null,
+        meta_og_url: data.meta_og_url || null,
+        meta_og_image: data.meta_og_image || null,
+        meta_fb_id: data.meta_fb_id || null,
+        meta_og_sitename: data.meta_og_sitename || null,
+        post_twitter: data.post_twitter || null,
         updatedById: currentUser.id,
       },
-      {transaction},
+      { transaction }
     );
-
-
 
     return categories;
   }
 
   static async remove(id, options) {
-    const currentUser = (options && options.currentUser) || {id: null};
+    const currentUser = (options && options.currentUser) || { id: null };
     const transaction = (options && options.transaction) || undefined;
 
     const categories = await db.categories.findByPk(id, options);
 
-    await categories.update({
-      deletedBy: currentUser.id
-    }, {
-      transaction,
-    });
+    await categories.update(
+      {
+        deletedBy: currentUser.id,
+      },
+      {
+        transaction,
+      }
+    );
 
     await categories.destroy({
-      transaction
+      transaction,
     });
 
     return categories;
@@ -130,17 +88,13 @@ title: data.title
   static async findBy(where, options) {
     const transaction = (options && options.transaction) || undefined;
 
-    const categories = await db.categories.findOne(
-      { where },
-      { transaction },
-    );
+    const categories = await db.categories.findOne({ where }, { transaction });
 
     if (!categories) {
       return categories;
     }
 
-    const output = categories.get({plain: true});
-
+    const output = categories.get({ plain: true });
 
     return output;
   }
@@ -152,64 +106,52 @@ title: data.title
 
     const transaction = (options && options.transaction) || undefined;
     let where = {};
-    let include = [
-
-    ];
+    let include = [];
 
     if (filter) {
       if (filter.id) {
         where = {
           ...where,
-          ['id']: Utils.uuid(filter.id),
+          ["id"]: Utils.uuid(filter.id),
         };
       }
-
 
       if (filter.title) {
         where = {
           ...where,
-          [Op.and]: Utils.ilike(
-            'categories',
-            'title',
-            filter.title,
-          ),
+          [Op.and]: Utils.ilike("categories", "title", filter.title),
         };
       }
-
 
       if (
         filter.active === true ||
-        filter.active === 'true' ||
+        filter.active === "true" ||
         filter.active === false ||
-        filter.active === 'false'
+        filter.active === "false"
       ) {
         where = {
           ...where,
-          active:
-            filter.active === true ||
-            filter.active === 'true',
+          active: filter.active === true || filter.active === "true",
         };
       }
-
-
 
       if (filter.createdAtRange) {
         const [start, end] = filter.createdAtRange;
 
-        if (start !== undefined && start !== null && start !== '') {
+        if (start !== undefined && start !== null && start !== "") {
           where = {
             ...where,
-            ['createdAt']: {
+            ["createdAt"]: {
               ...where.createdAt,
               [Op.gte]: start,
             },
           };
         }
 
-        if (end !== undefined && end !== null && end !== '') {
+        if (end !== undefined && end !== null && end !== "") {
           where = {
             ...where,
-            ['createdAt']: {
+            ["createdAt"]: {
               ...where.createdAt,
               [Op.lte]: end,
             },
@@ -218,23 +160,19 @@ title: data.title
       }
     }
 
-    let { rows, count } = await db.categories.findAndCountAll(
-      {
-        where,
-        include,
-        limit: limit ? Number(limit) : undefined,
-        offset: offset ? Number(offset) : undefined,
-        order: orderBy
-          ? [orderBy.split('_')]
-          : [['createdAt', 'DESC']],
-        transaction,
-      },
-    );
+    let { rows, count } = await db.categories.findAndCountAll({
+      where,
+      include,
+      limit: limit ? Number(limit) : undefined,
+      offset: offset ? Number(offset) : undefined,
+      order: orderBy ? [orderBy.split("_")] : [["createdAt", "DESC"]],
+      transaction,
+    });
 
-//    rows = await this._fillWithRelationsAndFilesForRows(
-//      rows,
-//      options,
-//    );
+    //    rows = await this._fillWithRelationsAndFilesForRows(
+    //      rows,
+    //      options,
+    //    );
 
     return { rows, count };
   }
@@ -245,21 +183,17 @@ title: data.title
     if (query) {
       where = {
         [Op.or]: [
-          { ['id']: Utils.uuid(query) },
-          Utils.ilike(
-            'categories',
-            'title',
-            query,
-          ),
+          { ["id"]: Utils.uuid(query) },
+          Utils.ilike("categories", "title", query),
         ],
       };
     }
 
     const records = await db.categories.findAll({
-      attributes: [ 'id', 'title' ],
+      attributes: ["id", "title"],
       where,
       limit: limit ? Number(limit) : undefined,
-      orderBy: [['title', 'ASC']],
+      orderBy: [["title", "ASC"]],
     });
 
     return records.map((record) => ({
@@ -267,7 +201,4 @@ title: data.title
       label: record.title,
     }));
   }
-
-
 };
-

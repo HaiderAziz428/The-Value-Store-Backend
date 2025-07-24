@@ -1,6 +1,7 @@
 module.exports = {
   production: {
-    use_env_variable: "DATABASE_URL",
+    use_env_variable:
+      "postgresql://neondb_owner:npg_SAPULEa82diN@ep-lucky-tree-a1fw16lb.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
     dialect: "postgres",
     dialectOptions: {
       ssl: {
@@ -10,11 +11,8 @@ module.exports = {
     },
   },
   development: {
-    username: "postgres",
+    url: "postgresql://neondb_owner:npg_SAPULEa82diNQ@ep-lucky-tree-a1fw16lb.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
     dialect: "postgres",
-    password: "Devilinside123", // <-- Enter your actual postgres password here
-    database: "development", // <-- Use the database you created
-    host: "localhost",
     logging: console.log,
   },
 };

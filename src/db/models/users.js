@@ -27,12 +27,10 @@ module.exports = function (sequelize, DataTypes) {
       },
       role: {
         type: DataTypes.ENUM,
-
         values: ["admin", "user"],
       },
       disabled: {
         type: DataTypes.BOOLEAN,
-
         allowNull: false,
         defaultValue: false,
       },
@@ -41,7 +39,6 @@ module.exports = function (sequelize, DataTypes) {
       },
       emailVerified: {
         type: DataTypes.BOOLEAN,
-
         allowNull: false,
         defaultValue: false,
       },
@@ -60,7 +57,6 @@ module.exports = function (sequelize, DataTypes) {
       provider: {
         type: DataTypes.TEXT,
       },
-
       importHash: {
         type: DataTypes.STRING(255),
         allowNull: true,
@@ -74,13 +70,8 @@ module.exports = function (sequelize, DataTypes) {
   );
 
   users.associate = (db) => {
-    db.users.belongsToMany(db.products, {
-      as: "wishlist",
-      constraints: false,
-      through: "usersWishlistProducts",
-    });
-
-    db.users.hasMany(db.file, {
+    // Removed wishlist association
+    users.hasMany(db.file, {
       as: "avatar",
       foreignKey: "belongsToId",
       constraints: false,
@@ -90,11 +81,11 @@ module.exports = function (sequelize, DataTypes) {
       },
     });
 
-    db.users.belongsTo(db.users, {
+    users.belongsTo(db.users, {
       as: "createdBy",
     });
 
-    db.users.belongsTo(db.users, {
+    users.belongsTo(db.users, {
       as: "updatedBy",
     });
   };
