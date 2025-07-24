@@ -36,10 +36,6 @@ module.exports = class UsersDBApi {
       { transaction }
     );
 
-    await users.setWishlist(data.wishlist || [], {
-      transaction,
-    });
-
     await FileDBApi.replaceRelationFiles(
       {
         belongsTo: db.users.getTableName(),
@@ -83,10 +79,6 @@ module.exports = class UsersDBApi {
       },
       { transaction }
     );
-
-    await users.setWishlist(data.wishlist || [], {
-      transaction,
-    });
 
     await FileDBApi.replaceRelationFiles(
       {
@@ -142,21 +134,6 @@ module.exports = class UsersDBApi {
     const transaction = (options && options.transaction) || undefined;
     let where = {};
     let include = [
-      {
-        model: db.products,
-        as: "wishlist",
-        through: filter.wishlist
-          ? {
-              where: {
-                [Op.or]: filter.wishlist.split("|").map((item) => {
-                  return { ["productId"]: Utils.uuid(item) };
-                }),
-              },
-            }
-          : null,
-        required: filter.wishlist ? true : null,
-      },
-
       {
         model: db.file,
         as: "avatar",

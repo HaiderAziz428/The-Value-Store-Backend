@@ -70,7 +70,7 @@ module.exports = function (sequelize, DataTypes) {
   );
 
   users.associate = (db) => {
-    // Removed wishlist association
+    // No wishlist association
     users.hasMany(db.file, {
       as: "avatar",
       foreignKey: "belongsToId",
