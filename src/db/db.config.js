@@ -1,18 +1,23 @@
 module.exports = {
   production: {
-    use_env_variable:
-      "postgresql://neondb_owner:npg_SAPULEa82diN@ep-lucky-tree-a1fw16lb.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+    use_env_variable: "DATABASE_URL",
     dialect: "postgres",
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false, // <<<<<<< YOU NEED THIS
+        rejectUnauthorized: false,
       },
     },
   },
   development: {
-    url: "postgresql://neondb_owner:npg_SAPULEa82diNQ@ep-lucky-tree-a1fw16lb.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+    use_env_variable: "DATABASE_URL",
     dialect: "postgres",
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    },
     logging: console.log,
   },
 };

@@ -8,20 +8,21 @@ const env = process.env.NODE_ENV || "development";
 const config = require("../db.config")[env];
 const db = {};
 
-const connectionString =
-  "postgresql://neondb_owner:npg_GN6IWpt9mKVy@ep-lucky-tree-a1fw16lb.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
-
-const sequelize = new Sequelize(connectionString, {
-  dialect: "postgres",
-  logging: console.log,
-  ssl: true,
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
-    },
-  },
-});
+let sequelize;
+if (config.use_env_variable) {
+  sequelize = new Sequelize(process.env[config.use_env_variable], {
+    dialect: config.dialect,
+    logging: config.logging,
+    dialectOptions: config.dialectOptions,
+  });
+} else {
+  sequelize = new Sequelize(
+    config.database,
+    config.username,
+    config.password,
+    config
+  );
+}
 
 fs.readdirSync(__dirname)
   .filter((file) => {
