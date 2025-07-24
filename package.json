@@ -7,7 +7,7 @@
     "reset": "cross-env node ./src/db/reset.js"
   },
   "engines": {
-    "node": "12.9.1"
+    "node": "20.x"
   },
   "dependencies": {
     "bcrypt": "5.0.0",
