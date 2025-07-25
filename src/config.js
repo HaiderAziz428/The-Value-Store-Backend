@@ -49,4 +49,9 @@ config.host =
 config.apiUrl = `${config.host}${config.port ? `:${config.port}` : ``}/api`;
 config.uiUrl = `${config.hostUI}${config.portUI ? `:${config.portUI}` : ``}`;
 
+// To use Supabase, set DATABASE_URL in your environment to:
+// postgresql://postgres:Devilinside123@db.wlsusjkwpljzcteqkkcy.supabase.co:5432/postgres
+// or for the pooler:
+// postgresql://postgres.wlsusjkwpljzcteqkkcy:Devilinside123@aws-0-ap-south-1.pooler.supabase.com:6543/postgres
+
 module.exports = config;
