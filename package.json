@@ -4,7 +4,8 @@
   "scripts": {
     "start": "node ./src/index.js",
     "start:dev": "cross-env nodemon ./src/index.js",
-    "reset": "cross-env node ./src/db/reset.js"
+    "reset": "cross-env node ./src/db/reset.js",
+    "postinstall": "npm install pg"
   },
   "engines": {
     "node": "20.x"
