@@ -185,55 +185,48 @@ module.exports = class ProductsDBApi {
   }
 
   static async findAll(filter, options) {
-    var limit = filter.limit ? parseInt(filter.limit) : 20; // Default limit
-    var offset = filter.offset ? parseInt(filter.offset) : 0;
-    var orderBy = filter.orderBy || [["createdAt", "DESC"]];
+    var limit = 0;
+    var offset = 0;
+    var orderBy = null;
 
     const transaction = (options && options.transaction) || undefined;
     let where = {};
-
-    // Optimize includes - only include what's necessary
     let include = [
+      {
+        model: db.categories,
+        as: "categories",
+        through: filter.categories
+          ? {
+              where: {
+                [Op.or]: filter.categories.split("|").map((item) => {
+                  return { ["categoryId"]: Utils.uuid(item) };
+                }),
+              },
+            }
+          : null,
+        required: filter.categories ? true : null,
+      },
+
+      {
+        model: db.products,
+        as: "more_products",
+        through: filter.more_products
+          ? {
+              where: {
+                [Op.or]: filter.more_products.split("|").map((item) => {
+                  return { ["productId"]: Utils.uuid(item) };
+                }),
+              },
+            }
+          : null,
+        required: filter.more_products ? true : null,
+      },
+
       {
         model: db.file,
         as: "image",
-        attributes: ["id", "name", "publicUrl"], // Only select needed fields
       },
     ];
-
-    // Only add category include if filtering by categories
-    if (filter.categories) {
-      include.push({
-        model: db.categories,
-        as: "categories",
-        through: {
-          where: {
-            [Op.or]: filter.categories.split("|").map((item) => {
-              return { ["categoryId"]: Utils.uuid(item) };
-            }),
-          },
-        },
-        required: true,
-        attributes: ["id", "name"], // Only select needed fields
-      });
-    }
-
-    // Only add more_products include if filtering by more_products
-    if (filter.more_products) {
-      include.push({
-        model: db.products,
-        as: "more_products",
-        through: {
-          where: {
-            [Op.or]: filter.more_products.split("|").map((item) => {
-              return { ["productId"]: Utils.uuid(item) };
-            }),
-          },
-        },
-        required: true,
-        attributes: ["id", "title", "price"], // Only select needed fields
-      });
-    }
 
     if (filter) {
       if (filter.id) {
@@ -373,23 +366,19 @@ module.exports = class ProductsDBApi {
       }
     }
 
-    // Add default where clause to exclude deleted records
-    where = {
-      ...where,
-      deletedAt: null,
-    };
-
     let { rows, count } = await db.products.findAndCountAll({
       where,
       include,
-      limit: limit,
-      offset: offset,
-      order: orderBy,
+      limit: limit ? Number(limit) : undefined,
+      offset: offset ? Number(offset) : undefined,
+      order: orderBy ? [orderBy.split("_")] : [["createdAt", "DESC"]],
       transaction,
-      // Add query optimization hints
-      subQuery: false,
-      distinct: true,
     });
+
+    //    rows = await this._fillWithRelationsAndFilesForRows(
+    //      rows,
+    //      options,
+    //    );
 
     return { rows, count };
   }

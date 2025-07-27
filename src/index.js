@@ -7,7 +7,6 @@ const path = require("path");
 const fs = require("fs");
 const bodyParser = require("body-parser");
 const helmet = require("helmet");
-const compression = require("compression");
 const db = require("./db/models");
 const Stripe = require("stripe");
 if (process.env.NODE_ENV !== "production") {
@@ -29,38 +28,13 @@ const paymentsRoutes = require("./routes/payments");
 
 const usersRoutes = require("./routes/users");
 
-// Enable compression for all responses
-app.use(compression());
+app.use(cors({ origin: true }));
 
-// Configure CORS with better performance
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
-app.use(
-  helmet({
-    contentSecurityPolicy: false, // Disable CSP for development
-    crossOriginEmbedderPolicy: false,
-  })
-);
+app.use(helmet());
 
 require("./auth/auth");
 
-// Increase body parser limits for better performance
-app.use(bodyParser.json({ limit: "10mb" }));
-app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
-
-// Add caching headers for static assets
-app.use("/api", (req, res, next) => {
-  // Cache API responses for 5 minutes
-  res.set("Cache-Control", "public, max-age=300");
-  next();
-});
+app.use(bodyParser.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/file", fileRoutes);
@@ -89,10 +63,7 @@ app.use(
   usersRoutes
 );
 
-// Optimize image serving with caching
 app.get("/images/:entity/:id.:ext", (req, res) => {
-  // Add caching headers for images
-  res.set("Cache-Control", "public, max-age=86400"); // Cache for 24 hours
   res.sendFile(
     `${__dirname}/images/${req.params.entity}/${req.params.id}.${req.params.ext}`
   );
