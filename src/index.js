@@ -8,7 +8,6 @@ const fs = require("fs");
 const bodyParser = require("body-parser");
 const helmet = require("helmet");
 const compression = require("compression");
-const rateLimit = require("express-rate-limit");
 const db = require("./db/models");
 const Stripe = require("stripe");
 if (process.env.NODE_ENV !== "production") {
@@ -17,28 +16,26 @@ if (process.env.NODE_ENV !== "production") {
 
 const authRoutes = require("./routes/auth");
 const fileRoutes = require("./routes/file");
+
 const productsRoutes = require("./routes/products");
+
 const categoriesRoutes = require("./routes/categories");
+
 const feedbackRoutes = require("./routes/feedback");
+
 const ordersRoutes = require("./routes/orders");
+
 const paymentsRoutes = require("./routes/payments");
+
 const usersRoutes = require("./routes/users");
 
 // Enable compression for all responses
 app.use(compression());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later.",
-});
-app.use("/api/", limiter);
-
-// CORS with specific options for better performance
+// Configure CORS with better performance
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || true,
+    origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -54,60 +51,51 @@ app.use(
 
 require("./auth/auth");
 
-// Increase body parser limits for file uploads
+// Increase body parser limits for better performance
 app.use(bodyParser.json({ limit: "10mb" }));
 app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 
-// Add caching headers middleware
-app.use((req, res, next) => {
-  // Cache static assets for 1 year
-  if (
-    req.url.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)
-  ) {
-    res.setHeader("Cache-Control", "public, max-age=31536000");
-  }
+// Add caching headers for static assets
+app.use("/api", (req, res, next) => {
   // Cache API responses for 5 minutes
-  else if (req.url.startsWith("/api/") && req.method === "GET") {
-    res.setHeader("Cache-Control", "public, max-age=300");
-  }
+  res.set("Cache-Control", "public, max-age=300");
   next();
 });
 
 app.use("/api/auth", authRoutes);
 app.use("/api/file", fileRoutes);
+
 app.use("/api/products", productsRoutes);
+
 app.use("/api/categories", categoriesRoutes);
+
 app.use("/api/feedback", feedbackRoutes);
+
 app.use(
   "/api/orders",
   passport.authenticate("jwt", { session: false }),
   ordersRoutes
 );
+
 app.use(
   "/api/payments",
   passport.authenticate("jwt", { session: false }),
   paymentsRoutes
 );
+
 app.use(
   "/api/users",
   passport.authenticate("jwt", { session: false }),
   usersRoutes
 );
 
-// Optimize image serving with proper headers
+// Optimize image serving with caching
 app.get("/images/:entity/:id.:ext", (req, res) => {
-  const filePath = `${__dirname}/images/${req.params.entity}/${req.params.id}.${req.params.ext}`;
-
-  // Check if file exists
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).send("Image not found");
-  }
-
-  // Set proper headers for images
-  res.setHeader("Cache-Control", "public, max-age=31536000");
-  res.setHeader("Content-Type", `image/${req.params.ext}`);
-
-  res.sendFile(filePath);
+  // Add caching headers for images
+  res.set("Cache-Control", "public, max-age=86400"); // Cache for 24 hours
+  res.sendFile(
+    `${__dirname}/images/${req.params.entity}/${req.params.id}.${req.params.ext}`
+  );
 });
 
 app.post("/payment/session-initiate", async (req, res) => {
@@ -169,16 +157,11 @@ app.post("/payment/session-complete", async (req, res) => {
 
 const PORT = process.env.PORT || 8080;
 
-// Optimize database connection
 db.sequelize.sync().then(function () {
   app.listen(PORT, () => {
     console.log(`Listening on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
   });
-
-  // Optimize cron job to run less frequently
-  cron.schedule("0 0 */6 * * *", () => {
-    // Run every 6 hours instead of every hour
+  cron.schedule("0 0 */1 * * *", () => {
     exec("yarn reset", (err) => {
       if (err) {
         console.error(err);

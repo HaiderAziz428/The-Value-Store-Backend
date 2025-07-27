@@ -156,31 +156,7 @@ module.exports = class ProductsDBApi {
   static async findBy(where, options) {
     const transaction = (options && options.transaction) || undefined;
 
-    const products = await db.products.findOne({
-      where,
-      transaction,
-      // Add query optimization
-      attributes: [
-        "id",
-        "title",
-        "price",
-        "discount",
-        "description",
-        "rating",
-        "status",
-        "meta_description",
-        "keywords",
-        "meta_author",
-        "meta_og_title",
-        "meta_og_url",
-        "meta_og_image",
-        "meta_fb_id",
-        "meta_og_sitename",
-        "post_twitter",
-        "createdAt",
-        "updatedAt",
-      ],
-    });
+    const products = await db.products.findOne({ where }, { transaction });
 
     if (!products) {
       return products;
@@ -188,93 +164,76 @@ module.exports = class ProductsDBApi {
 
     const output = products.get({ plain: true });
 
-    // Optimize file loading with specific attributes
     output.image = await products.getImage({
       transaction,
-      attributes: ["id", "name", "publicUrl", "privateUrl"],
     });
 
     // Add this to include video files in the output
     output.video = await products.getVideo({
       transaction,
-      attributes: ["id", "name", "publicUrl", "privateUrl"],
     });
 
-    output.categories = await products
-      .getCategories({
-        transaction,
-        attributes: ["id", "title", "description"],
-      })
-      .catch(async (error) => {
-        // Fallback if title column doesn't exist, try name column
-        if (
-          error.message.includes("column categories.name does not exist") ||
-          error.message.includes("column categories.title does not exist")
-        ) {
-          return await products.getCategories({
-            transaction,
-            attributes: ["id", "description"],
-          });
-        }
-        throw error;
-      });
+    output.categories = await products.getCategories({
+      transaction,
+    });
 
     output.more_products = await products.getMore_products({
       transaction,
-      attributes: ["id", "title", "price"],
     });
 
     return output;
   }
 
   static async findAll(filter, options) {
-    var limit = 0;
-    var offset = 0;
-    var orderBy = null;
+    var limit = filter.limit ? parseInt(filter.limit) : 20; // Default limit
+    var offset = filter.offset ? parseInt(filter.offset) : 0;
+    var orderBy = filter.orderBy || [["createdAt", "DESC"]];
 
     const transaction = (options && options.transaction) || undefined;
     let where = {};
 
-    // Optimize includes to only fetch necessary data
+    // Optimize includes - only include what's necessary
     let include = [
-      {
-        model: db.categories,
-        as: "categories",
-        through: filter.categories
-          ? {
-              where: {
-                [Op.or]: filter.categories.split("|").map((item) => {
-                  return { ["categoryId"]: Utils.uuid(item) };
-                }),
-              },
-            }
-          : null,
-        required: filter.categories ? true : null,
-        attributes: ["id", "title", "description"], // Only fetch needed attributes
-      },
-
-      {
-        model: db.products,
-        as: "more_products",
-        through: filter.more_products
-          ? {
-              where: {
-                [Op.or]: filter.more_products.split("|").map((item) => {
-                  return { ["productId"]: Utils.uuid(item) };
-                }),
-              },
-            }
-          : null,
-        required: filter.more_products ? true : null,
-        attributes: ["id", "title", "price"], // Only fetch needed attributes
-      },
-
       {
         model: db.file,
         as: "image",
-        attributes: ["id", "name", "publicUrl", "privateUrl"], // Only fetch needed attributes
+        attributes: ["id", "name", "publicUrl"], // Only select needed fields
       },
     ];
+
+    // Only add category include if filtering by categories
+    if (filter.categories) {
+      include.push({
+        model: db.categories,
+        as: "categories",
+        through: {
+          where: {
+            [Op.or]: filter.categories.split("|").map((item) => {
+              return { ["categoryId"]: Utils.uuid(item) };
+            }),
+          },
+        },
+        required: true,
+        attributes: ["id", "name"], // Only select needed fields
+      });
+    }
+
+    // Only add more_products include if filtering by more_products
+    if (filter.more_products) {
+      include.push({
+        model: db.products,
+        as: "more_products",
+        through: {
+          where: {
+            [Op.or]: filter.more_products.split("|").map((item) => {
+              return { ["productId"]: Utils.uuid(item) };
+            }),
+          },
+        },
+        required: true,
+        attributes: ["id", "title", "price"], // Only select needed fields
+      });
+    }
 
     if (filter) {
       if (filter.id) {
@@ -414,93 +373,22 @@ module.exports = class ProductsDBApi {
       }
     }
 
-    // Add pagination and limit for better performance
-    if (filter && filter.limit) {
-      limit = Number(filter.limit);
-    } else {
-      limit = 50; // Default limit to prevent large queries
-    }
-
-    if (filter && filter.offset) {
-      offset = Number(filter.offset);
-    }
+    // Add default where clause to exclude deleted records
+    where = {
+      ...where,
+      deletedAt: null,
+    };
 
     let { rows, count } = await db.products.findAndCountAll({
       where,
       include,
-      limit: limit ? Number(limit) : 50, // Default limit
-      offset: offset ? Number(offset) : 0,
-      order: orderBy ? [orderBy.split("_")] : [["createdAt", "DESC"]],
+      limit: limit,
+      offset: offset,
+      order: orderBy,
       transaction,
-      // Add query optimization
-      attributes: [
-        "id",
-        "title",
-        "price",
-        "discount",
-        "description",
-        "rating",
-        "status",
-        "meta_description",
-        "keywords",
-        "meta_author",
-        "meta_og_title",
-        "meta_og_url",
-        "meta_og_image",
-        "meta_fb_id",
-        "meta_og_sitename",
-        "post_twitter",
-        "createdAt",
-        "updatedAt",
-      ],
-      // Add query hints for better performance
+      // Add query optimization hints
       subQuery: false,
-    }).catch(async (error) => {
-      // Fallback if categories.title doesn't exist, try without title attribute
-      if (error.message.includes('column categories.name does not exist') || 
-          error.message.includes('column categories.title does not exist')) {
-        // Remove title from categories attributes
-        include = include.map(inc => {
-          if (inc.as === "categories") {
-            return {
-              ...inc,
-              attributes: ["id", "description"]
-            };
-          }
-          return inc;
-        });
-        
-        return await db.products.findAndCountAll({
-          where,
-          include,
-          limit: limit ? Number(limit) : 50,
-          offset: offset ? Number(offset) : 0,
-          order: orderBy ? [orderBy.split("_")] : [["createdAt", "DESC"]],
-          transaction,
-          attributes: [
-            "id",
-            "title",
-            "price",
-            "discount",
-            "description",
-            "rating",
-            "status",
-            "meta_description",
-            "keywords",
-            "meta_author",
-            "meta_og_title",
-            "meta_og_url",
-            "meta_og_image",
-            "meta_fb_id",
-            "meta_og_sitename",
-            "post_twitter",
-            "createdAt",
-            "updatedAt",
-          ],
-          subQuery: false,
-        });
-      }
-      throw error;
+      distinct: true,
     });
 
     return { rows, count };
@@ -521,7 +409,7 @@ module.exports = class ProductsDBApi {
     const records = await db.products.findAll({
       attributes: ["id", "title"],
       where,
-      limit: limit ? Number(limit) : 10, // Limit autocomplete results
+      limit: limit ? Number(limit) : undefined,
       orderBy: [["title", "ASC"]],
     });
 
