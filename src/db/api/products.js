@@ -156,7 +156,31 @@ module.exports = class ProductsDBApi {
   static async findBy(where, options) {
     const transaction = (options && options.transaction) || undefined;
 
-    const products = await db.products.findOne({ where }, { transaction });
+    const products = await db.products.findOne({
+      where,
+      transaction,
+      // Add query optimization
+      attributes: [
+        "id",
+        "title",
+        "price",
+        "discount",
+        "description",
+        "rating",
+        "status",
+        "meta_description",
+        "keywords",
+        "meta_author",
+        "meta_og_title",
+        "meta_og_url",
+        "meta_og_image",
+        "meta_fb_id",
+        "meta_og_sitename",
+        "post_twitter",
+        "createdAt",
+        "updatedAt",
+      ],
+    });
 
     if (!products) {
       return products;
@@ -164,21 +188,26 @@ module.exports = class ProductsDBApi {
 
     const output = products.get({ plain: true });
 
+    // Optimize file loading with specific attributes
     output.image = await products.getImage({
       transaction,
+      attributes: ["id", "name", "publicUrl", "privateUrl"],
     });
 
     // Add this to include video files in the output
     output.video = await products.getVideo({
       transaction,
+      attributes: ["id", "name", "publicUrl", "privateUrl"],
     });
 
     output.categories = await products.getCategories({
       transaction,
+      attributes: ["id", "name", "description"],
     });
 
     output.more_products = await products.getMore_products({
       transaction,
+      attributes: ["id", "title", "price"],
     });
 
     return output;
@@ -191,6 +220,8 @@ module.exports = class ProductsDBApi {
 
     const transaction = (options && options.transaction) || undefined;
     let where = {};
+
+    // Optimize includes to only fetch necessary data
     let include = [
       {
         model: db.categories,
@@ -205,6 +236,7 @@ module.exports = class ProductsDBApi {
             }
           : null,
         required: filter.categories ? true : null,
+        attributes: ["id", "name", "description"], // Only fetch needed attributes
       },
 
       {
@@ -220,11 +252,13 @@ module.exports = class ProductsDBApi {
             }
           : null,
         required: filter.more_products ? true : null,
+        attributes: ["id", "title", "price"], // Only fetch needed attributes
       },
 
       {
         model: db.file,
         as: "image",
+        attributes: ["id", "name", "publicUrl", "privateUrl"], // Only fetch needed attributes
       },
     ];
 
@@ -366,19 +400,48 @@ module.exports = class ProductsDBApi {
       }
     }
 
+    // Add pagination and limit for better performance
+    if (filter && filter.limit) {
+      limit = Number(filter.limit);
+    } else {
+      limit = 50; // Default limit to prevent large queries
+    }
+
+    if (filter && filter.offset) {
+      offset = Number(filter.offset);
+    }
+
     let { rows, count } = await db.products.findAndCountAll({
       where,
       include,
-      limit: limit ? Number(limit) : undefined,
-      offset: offset ? Number(offset) : undefined,
+      limit: limit ? Number(limit) : 50, // Default limit
+      offset: offset ? Number(offset) : 0,
       order: orderBy ? [orderBy.split("_")] : [["createdAt", "DESC"]],
       transaction,
+      // Add query optimization
+      attributes: [
+        "id",
+        "title",
+        "price",
+        "discount",
+        "description",
+        "rating",
+        "status",
+        "meta_description",
+        "keywords",
+        "meta_author",
+        "meta_og_title",
+        "meta_og_url",
+        "meta_og_image",
+        "meta_fb_id",
+        "meta_og_sitename",
+        "post_twitter",
+        "createdAt",
+        "updatedAt",
+      ],
+      // Add query hints for better performance
+      subQuery: false,
     });
-
-    //    rows = await this._fillWithRelationsAndFilesForRows(
-    //      rows,
-    //      options,
-    //    );
 
     return { rows, count };
   }
@@ -398,7 +461,7 @@ module.exports = class ProductsDBApi {
     const records = await db.products.findAll({
       attributes: ["id", "title"],
       where,
-      limit: limit ? Number(limit) : undefined,
+      limit: limit ? Number(limit) : 10, // Limit autocomplete results
       orderBy: [["title", "ASC"]],
     });
 
