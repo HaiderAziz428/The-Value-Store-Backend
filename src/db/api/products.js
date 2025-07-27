@@ -200,10 +200,24 @@ module.exports = class ProductsDBApi {
       attributes: ["id", "name", "publicUrl", "privateUrl"],
     });
 
-    output.categories = await products.getCategories({
-      transaction,
-      attributes: ["id", "name", "description"],
-    });
+    output.categories = await products
+      .getCategories({
+        transaction,
+        attributes: ["id", "title", "description"],
+      })
+      .catch(async (error) => {
+        // Fallback if title column doesn't exist, try name column
+        if (
+          error.message.includes("column categories.name does not exist") ||
+          error.message.includes("column categories.title does not exist")
+        ) {
+          return await products.getCategories({
+            transaction,
+            attributes: ["id", "description"],
+          });
+        }
+        throw error;
+      });
 
     output.more_products = await products.getMore_products({
       transaction,
@@ -236,7 +250,7 @@ module.exports = class ProductsDBApi {
             }
           : null,
         required: filter.categories ? true : null,
-        attributes: ["id", "name", "description"], // Only fetch needed attributes
+        attributes: ["id", "title", "description"], // Only fetch needed attributes
       },
 
       {
@@ -441,6 +455,52 @@ module.exports = class ProductsDBApi {
       ],
       // Add query hints for better performance
       subQuery: false,
+    }).catch(async (error) => {
+      // Fallback if categories.title doesn't exist, try without title attribute
+      if (error.message.includes('column categories.name does not exist') || 
+          error.message.includes('column categories.title does not exist')) {
+        // Remove title from categories attributes
+        include = include.map(inc => {
+          if (inc.as === "categories") {
+            return {
+              ...inc,
+              attributes: ["id", "description"]
+            };
+          }
+          return inc;
+        });
+        
+        return await db.products.findAndCountAll({
+          where,
+          include,
+          limit: limit ? Number(limit) : 50,
+          offset: offset ? Number(offset) : 0,
+          order: orderBy ? [orderBy.split("_")] : [["createdAt", "DESC"]],
+          transaction,
+          attributes: [
+            "id",
+            "title",
+            "price",
+            "discount",
+            "description",
+            "rating",
+            "status",
+            "meta_description",
+            "keywords",
+            "meta_author",
+            "meta_og_title",
+            "meta_og_url",
+            "meta_og_image",
+            "meta_fb_id",
+            "meta_og_sitename",
+            "post_twitter",
+            "createdAt",
+            "updatedAt",
+          ],
+          subQuery: false,
+        });
+      }
+      throw error;
     });
 
     return { rows, count };
