@@ -1,7 +1,6 @@
 const express = require("express");
 const { Op } = require("sequelize");
 const router = express.Router();
-const { getProfile } = require("../auth/profile");
 const reviewsApi = require("../db/api/reviews");
 const { handleError } = require("../helpers");
 
