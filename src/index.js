@@ -28,7 +28,7 @@ const paymentsRoutes = require("./routes/payments");
 
 const usersRoutes = require("./routes/users");
 
-const reviewsRoutes = require("./routes/reviews");
+// Removed reviewsRoutes import
 
 app.use(cors({ origin: true }));
 
@@ -65,12 +65,19 @@ app.use(
   usersRoutes
 );
 
-app.use("/api/reviews", reviewsRoutes);
+// Removed reviews route
 
+// Serve static images with error handling
 app.get("/images/:entity/:id.:ext", (req, res) => {
-  res.sendFile(
-    `${__dirname}/images/${req.params.entity}/${req.params.id}.${req.params.ext}`
-  );
+  const imagePath = `${__dirname}/images/${req.params.entity}/${req.params.id}.${req.params.ext}`;
+
+  // Check if file exists
+  if (fs.existsSync(imagePath)) {
+    res.sendFile(imagePath);
+  } else {
+    // Return a default image or 404
+    res.status(404).json({ error: "Image not found" });
+  }
 });
 
 app.post("/payment/session-initiate", async (req, res) => {
