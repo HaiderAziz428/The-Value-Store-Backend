@@ -1,15 +1,15 @@
-const db = require('../models');
-const crypto = require('crypto');
-const Sequelize = require('sequelize');
-const getUrl = require('./helpers/getUrl');
-const { handleError } = require('../../helpers');
+const db = require("../models");
+const crypto = require("crypto");
+const Sequelize = require("sequelize");
+// const getUrl = require('./helpers/getUrl'); // Removed as it's not needed
+const { handleError } = require("../../helpers");
 
 const reviewsApi = {
   list: async (req, res) => {
     try {
       const { product_id, page = 1, limit = 10 } = req.query;
       const offset = (page - 1) * limit;
-      
+
       const where = {};
       if (product_id) {
         where.product_id = product_id;
@@ -19,12 +19,12 @@ const reviewsApi = {
         where,
         limit: parseInt(limit),
         offset: parseInt(offset),
-        order: [['created_at', 'DESC']],
+        order: [["created_at", "DESC"]],
         include: [
           {
             model: db.products,
-            as: 'product',
-            attributes: ['id', 'title'],
+            as: "product",
+            attributes: ["id", "title"],
           },
         ],
       });
@@ -52,26 +52,28 @@ const reviewsApi = {
         where: { product_id: productId },
         limit: parseInt(limit),
         offset: parseInt(offset),
-        order: [['created_at', 'DESC']],
+        order: [["created_at", "DESC"]],
       });
 
       // Calculate statistics
       const allReviews = await db.reviews.findAll({
         where: { product_id: productId },
-        attributes: ['rating'],
+        attributes: ["rating"],
       });
 
       const totalReviews = allReviews.length;
-      const averageRating = totalReviews > 0 
-        ? allReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews 
-        : 0;
+      const averageRating =
+        totalReviews > 0
+          ? allReviews.reduce((sum, review) => sum + review.rating, 0) /
+            totalReviews
+          : 0;
 
       const ratingCounts = {
-        5: allReviews.filter(r => r.rating === 5).length,
-        4: allReviews.filter(r => r.rating === 4).length,
-        3: allReviews.filter(r => r.rating === 3).length,
-        2: allReviews.filter(r => r.rating === 2).length,
-        1: allReviews.filter(r => r.rating === 1).length,
+        5: allReviews.filter((r) => r.rating === 5).length,
+        4: allReviews.filter((r) => r.rating === 4).length,
+        3: allReviews.filter((r) => r.rating === 3).length,
+        2: allReviews.filter((r) => r.rating === 2).length,
+        1: allReviews.filter((r) => r.rating === 1).length,
       };
 
       res.json({
@@ -98,14 +100,14 @@ const reviewsApi = {
         include: [
           {
             model: db.products,
-            as: 'product',
-            attributes: ['id', 'title'],
+            as: "product",
+            attributes: ["id", "title"],
           },
         ],
       });
 
       if (!review) {
-        return res.status(404).json({ message: 'Review not found' });
+        return res.status(404).json({ message: "Review not found" });
       }
 
       res.json(review);
@@ -116,26 +118,28 @@ const reviewsApi = {
 
   create: async (req, res) => {
     try {
-      const { product_id, rating, headline, comment, reviewer_name, images } = req.body;
+      const { product_id, rating, headline, comment, reviewer_name, images } =
+        req.body;
 
       // Validate required fields
       if (!product_id || !rating || !headline || !comment) {
-        return res.status(400).json({ 
-          message: 'Missing required fields: product_id, rating, headline, comment' 
+        return res.status(400).json({
+          message:
+            "Missing required fields: product_id, rating, headline, comment",
         });
       }
 
       // Validate rating range
       if (rating < 1 || rating > 5) {
-        return res.status(400).json({ 
-          message: 'Rating must be between 1 and 5' 
+        return res.status(400).json({
+          message: "Rating must be between 1 and 5",
         });
       }
 
       // Check if product exists
       const product = await db.products.findByPk(product_id);
       if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
+        return res.status(404).json({ message: "Product not found" });
       }
 
       const review = await db.reviews.create({
@@ -143,7 +147,7 @@ const reviewsApi = {
         rating,
         headline,
         comment,
-        reviewer_name: reviewer_name || 'Anonymous',
+        reviewer_name: reviewer_name || "Anonymous",
         images: images || [],
       });
 
@@ -160,13 +164,13 @@ const reviewsApi = {
 
       const review = await db.reviews.findByPk(id);
       if (!review) {
-        return res.status(404).json({ message: 'Review not found' });
+        return res.status(404).json({ message: "Review not found" });
       }
 
       // Validate rating range if provided
       if (rating && (rating < 1 || rating > 5)) {
-        return res.status(400).json({ 
-          message: 'Rating must be between 1 and 5' 
+        return res.status(400).json({
+          message: "Rating must be between 1 and 5",
         });
       }
 
@@ -188,17 +192,17 @@ const reviewsApi = {
     try {
       const { id } = req.params;
       const review = await db.reviews.findByPk(id);
-      
+
       if (!review) {
-        return res.status(404).json({ message: 'Review not found' });
+        return res.status(404).json({ message: "Review not found" });
       }
 
       await review.destroy();
-      res.json({ message: 'Review deleted successfully' });
+      res.json({ message: "Review deleted successfully" });
     } catch (error) {
       handleError(res, error);
     }
   },
 };
 
-module.exports = reviewsApi; 
+module.exports = reviewsApi;
