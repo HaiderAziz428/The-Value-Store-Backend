@@ -28,6 +28,8 @@ const paymentsRoutes = require("./routes/payments");
 
 const usersRoutes = require("./routes/users");
 
+const reviewsRoutes = require("./routes/reviews");
+
 app.use(cors({ origin: true }));
 
 app.use(helmet());
@@ -62,6 +64,8 @@ app.use(
   passport.authenticate("jwt", { session: false }),
   usersRoutes
 );
+
+app.use("/api/reviews", reviewsRoutes);
 
 app.get("/images/:entity/:id.:ext", (req, res) => {
   res.sendFile(
