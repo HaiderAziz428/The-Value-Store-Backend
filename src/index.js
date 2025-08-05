@@ -27,7 +27,8 @@ const ordersRoutes = require("./routes/orders");
 const paymentsRoutes = require("./routes/payments");
 
 const usersRoutes = require("./routes/users");
-const reviewsRoutes = require("./routes/reviews");
+
+// Removed reviewsRoutes import
 
 app.use(cors({ origin: true }));
 
@@ -64,7 +65,7 @@ app.use(
   usersRoutes
 );
 
-app.use("/api/reviews", reviewsRoutes);
+// Removed reviews route
 
 // Serve static images with error handling
 app.get("/images/:entity/:id.:ext", (req, res) => {
